@@ -2,9 +2,9 @@ from sklearn.ensemble import IsolationForest
 
 
 def get_risk_label(score):
-    if score < 2:
+    if score < 3:
         return "Low Risk"
-    elif score < 5:
+    elif score < 7:
         return "Medium Risk"
     else:
         return "High Risk"
@@ -13,10 +13,17 @@ def get_risk_label(score):
 def compute_burnout_risk(df):
     df = df.copy()
 
+    high_daily_activity = (df["daily_commit_frequency"] > 10).astype(int)
+    long_gap = (df["inter_commit_gap_hours"] > 48).astype(int)
+    very_small_diff = (df["total_changes"] < 5).astype(int)
+
     df["burnout_score"] = (
         df["late_night"] * 3
         + df["negative_score"] * 2
         + df["short_message"] * 1
+        + high_daily_activity * 2
+        + long_gap * 2
+        + very_small_diff * 1
     )
 
     features = df[
@@ -26,6 +33,12 @@ def compute_burnout_risk(df):
             "late_night",
             "negative_score",
             "short_message",
+            "inter_commit_gap_hours",
+            "daily_commit_frequency",
+            "weekly_commit_frequency",
+            "additions",
+            "deletions",
+            "total_changes",
             "burnout_score",
         ]
     ]
