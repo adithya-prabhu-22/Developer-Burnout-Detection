@@ -1,13 +1,30 @@
+import os
 import requests
 import pandas as pd
+
+
+def get_github_headers():
+    headers = {}
+
+    github_token = os.getenv("GITHUB_TOKEN")
+
+    if github_token:
+        headers["Authorization"] = f"Bearer {github_token}"
+
+    return headers
 
 
 def fetch_commit_details(owner, repo, sha):
     api_url = f"https://api.github.com/repos/{owner}/{repo}/commits/{sha}"
 
-    response = requests.get(api_url)
+    headers = get_github_headers()
+
+    response = requests.get(api_url, headers=headers)
 
     if response.status_code != 200:
+        print("GitHub API error:", response.status_code)
+        print(response.text)
+
         return {
             "additions": 0,
             "deletions": 0,
@@ -27,6 +44,8 @@ def fetch_commit_details(owner, repo, sha):
 def fetch_commits(owner, repo, max_pages=3):
     commits = []
 
+    headers = get_github_headers()
+
     for page in range(1, max_pages + 1):
         api_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
 
@@ -35,9 +54,15 @@ def fetch_commits(owner, repo, max_pages=3):
             "page": page,
         }
 
-        response = requests.get(api_url, params=params)
+        response = requests.get(
+            api_url,
+            params=params,
+            headers=headers,
+        )
 
         if response.status_code != 200:
+            print("GitHub API error:", response.status_code)
+            print(response.text)
             return None
 
         data = response.json()
